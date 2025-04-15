@@ -52,4 +52,52 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Endpoint PUT para atualizar um projeto existente
+router.put('/:id', async (req, res) => {
+  const {
+    nome_proprietario,
+    endereco,
+    situacao,
+    codigo_projeto,
+    latitude,
+    longitude,
+    engenheiro_responsavel,
+    numero_crea
+  } = req.body;
+  const { id } = req.params;
+
+  try {
+    const query = `
+      UPDATE projetos
+      SET nome_proprietario = $1,
+          endereco = $2,
+          situacao = $3,
+          codigo_projeto = $4,
+          latitude = $5,
+          longitude = $6,
+          engenheiro_responsavel = $7,
+          numero_crea = $8
+      WHERE id = $9
+    `;
+
+    await pool.query(query, [
+      nome_proprietario,
+      endereco,
+      situacao,
+      codigo_projeto,
+      latitude,
+      longitude,
+      engenheiro_responsavel,
+      numero_crea,
+      id
+    ]);
+
+    res.status(200).json({ message: 'Projeto atualizado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao atualizar projeto:', error);
+    res.status(500).json({ error: 'Erro ao atualizar projeto' });
+  }
+});
+
+
 export default router;
