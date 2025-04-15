@@ -5,6 +5,17 @@ import pool from '../../db/client.js'; // Certifique-se de que esse arquivo estÃ
 
 const router = express.Router();
 
+// Endpoint GET para listar todos os projetos
+router.get('/', async (req, res) => {
+  try {
+    const resultado = await pool.query('SELECT * FROM projetos ORDER BY id DESC');
+    res.json(resultado.rows);
+  } catch (error) {
+    console.error('Erro ao buscar projetos:', error);
+    res.status(500).json({ error: 'Erro ao buscar projetos' });
+  }
+});
+
 // Endpoint POST para inserir um projeto
 router.post('/', async (req, res) => {
   const {
