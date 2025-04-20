@@ -31,11 +31,17 @@ router.post('/login', async (req, res) => {
     const usuario = result.rows[0];
 
     if (!usuario) {
+      console.log('❌ Usuário não encontrado:', email);
       return res.status(400).json({ error: 'Usuário não encontrado' });
     }
 
+    console.log('🔎 Comparando senha digitada:', senha);
+    console.log('🔎 Hash no banco:', usuario.senha);
+
     const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+
     if (!senhaCorreta) {
+      console.log('❌ Senha incorreta');
       return res.status(401).json({ error: 'Senha incorreta' });
     }
 
