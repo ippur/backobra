@@ -1,4 +1,3 @@
-// src/index.js
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
@@ -8,7 +7,14 @@ import authMiddleware from './middleware/authMiddleware.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// Configuração de CORS para permitir apenas a origem da Vercel
+const corsOptions = {
+  origin: 'https://obravisor-frontend.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get('/', (req, res) => {
