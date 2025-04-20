@@ -1,7 +1,6 @@
-// routes/projetos.js
-
+// src/routes/projetos.js
 import express from 'express';
-import pool from '../../db/client.js'; // Certifique-se de que esse arquivo está correto e configurado para o PostgreSQL
+import pool from '../../db/client.js';
 
 const router = express.Router();
 
@@ -16,6 +15,21 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Endpoint GET para um único projeto por ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const resultado = await pool.query('SELECT * FROM projetos WHERE id = $1', [id]);
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({ error: 'Projeto não encontrado' });
+    }
+    res.json(resultado.rows[0]);
+  } catch (error) {
+    console.error('Erro ao buscar projeto por ID:', error);
+    res.status(500).json({ error: 'Erro ao buscar projeto por ID' });
+  }
+});
+
 // Endpoint POST para inserir um projeto
 router.post('/', async (req, res) => {
   const {
@@ -26,61 +40,21 @@ router.post('/', async (req, res) => {
     latitude,
     longitude,
     engenheiro_responsavel,
-    numero_crea
+    numero_crea,
+    boleto_emitido,
+    boleto_pago,
+    dias_em_atraso
   } = req.body;
-
-  try {
-    const query = 'INSERT INTO projetos (' +
-      'nome_proprietario, endereco, situacao, codigo_projeto, latitude, longitude, engenheiro_responsavel, numero_crea' +
-      ') VALUES ($1, $2, $3, $4, $5, $6, $7, $8)';
-    
-    await pool.query(query, [
-      nome_proprietario,
-      endereco,
-      situacao,
-      codigo_projeto,
-      latitude,
-      longitude,
-      engenheiro_responsavel,
-      numero_crea
-    ]);
-
-    res.status(201).json({ message: 'Projeto cadastrado com sucesso' });
-  } catch (error) {
-    console.error('Erro ao cadastrar projeto:', error);
-    res.status(500).json({ error: 'Erro ao cadastrar projeto' });
-  }
-});
-
-// Endpoint PUT para atualizar um projeto existente
-router.put('/:id', async (req, res) => {
-  const {
-    nome_proprietario,
-    endereco,
-    situacao,
-    codigo_projeto,
-    latitude,
-    longitude,
-    engenheiro_responsavel,
-    numero_crea
-  } = req.body;
-  const { id } = req.params;
 
   try {
     const query = `
-      UPDATE projetos
-      SET nome_proprietario = $1,
-          endereco = $2,
-          situacao = $3,
-          codigo_projeto = $4,
-          latitude = $5,
-          longitude = $6,
-          engenheiro_responsavel = $7,
-          numero_crea = $8
-      WHERE id = $9
+      INSERT INTO projetos (
+        nome_proprietario, endereco, situacao, codigo_projeto, latitude, longitude,
+        engenheiro_responsavel, numero_crea, boleto_emitido, boleto_pago, dias_em_atraso
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     `;
 
-    await pool.query(query, [
+    const valores = [
       nome_proprietario,
       endereco,
       situacao,
@@ -89,15 +63,17 @@ router.put('/:id', async (req, res) => {
       longitude,
       engenheiro_responsavel,
       numero_crea,
-      id
-    ]);
+      boleto_emitido,
+      boleto_pago,
+      dias_em_atraso
+    ];
 
-    res.status(200).json({ message: 'Projeto atualizado com sucesso' });
+    await pool.query(query, valores);
+    res.status(201).json({ message: 'Projeto cadastrado com sucesso' });
   } catch (error) {
-    console.error('Erro ao atualizar projeto:', error);
-    res.status(500).json({ error: 'Erro ao atualizar projeto' });
+    console.error('Erro ao cadastrar projeto:', error);
+    res.status(500).json({ error: 'Erro ao cadastrar projeto' });
   }
 });
-
 
 export default router;
