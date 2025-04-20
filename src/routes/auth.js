@@ -35,10 +35,12 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Usuário não encontrado' });
     }
 
-    console.log('🔎 Comparando senha digitada:', senha);
+    const senhaLimpa = senha.trim();
+
+    console.log('🔎 Comparando senha digitada:', senhaLimpa);
     console.log('🔎 Hash no banco:', usuario.senha);
 
-    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+    const senhaCorreta = await bcrypt.compare(senhaLimpa, usuario.senha);
 
     if (!senhaCorreta) {
       console.log('❌ Senha incorreta');
