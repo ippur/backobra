@@ -1,29 +1,31 @@
+// src/index.js
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import projetoRoutes from './routes/projetos.js';
-import authMiddleware from './middleware/authMiddleware.js';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configuração de CORS para permitir apenas a origem da Vercel
+// Configuração do CORS
 const corsOptions = {
-  origin: 'https://obravisor-frontend.vercel.app',
+  origin: ['https://obravisor-frontend.vercel.app', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true,
 };
-
 app.use(cors(corsOptions));
+
+// Middlewares
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('API do Obravisor está rodando!');
-});
-
+// Rotas
 app.use('/auth', authRoutes);
-app.use('/projetos', authMiddleware, projetoRoutes);
+app.use('/projetos', projetoRoutes);
 
+// Inicialização do servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
