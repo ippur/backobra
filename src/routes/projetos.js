@@ -4,6 +4,17 @@ import verificarToken from '../middleware/verificarToken.js';
 
 const router = express.Router();
 
+// ROTA GET /projetos (protegido por token)
+router.get('/', verificarToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM projetos');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar projetos:', error);
+    res.status(500).json({ error: 'Erro ao buscar projetos.' });
+  }
+});
+
 // ROTA PUT: Atualizar um projeto existente
 router.put('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
