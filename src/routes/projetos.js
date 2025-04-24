@@ -75,6 +75,24 @@ router.put('/:id', verificarToken, async (req, res) => {
   }
 });
 
+// GET /projetos/:id (detalhes de um projeto específico)
+router.get('/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('SELECT * FROM projetos WHERE id = $1', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Projeto não encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao buscar projeto por ID:', error);
+    res.status(500).json({ error: 'Erro ao buscar projeto' });
+  }
+});
+
 // ROTA DELETE: Exclui um projeto existente
 router.delete('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
