@@ -1,39 +1,39 @@
+// src/routes/projetos.js
 import express from 'express';
 import pool from '../db/client.js';
 import verificarToken from '../middleware/verificarToken.js';
 
 const router = express.Router();
 
-// ROTA GET /projetos (listar todos)
+// GET /projetos (listar todos)
 router.get('/', verificarToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM projetos');
     res.json(result.rows);
   } catch (error) {
-    console.error('Erro ao buscar projetos:', error);
+    console.error('❌ Erro ao buscar projetos:', error);
     res.status(500).json({ error: 'Erro ao buscar projetos.' });
   }
 });
 
-// ROTA GET /projetos/:id (detalhar)
+// GET /projetos/:id (detalhar)
 router.get('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
-
   try {
     const result = await pool.query('SELECT * FROM projetos WHERE id = $1', [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Projeto não encontrado' });
+      return res.status(404).json({ error: 'Projeto não encontrado.' });
     }
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Erro ao buscar projeto por ID:', error);
-    res.status(500).json({ error: 'Erro ao buscar projeto' });
+    console.error('❌ Erro ao buscar projeto por ID:', error);
+    res.status(500).json({ error: 'Erro ao buscar projeto.' });
   }
 });
 
-// ROTA POST /projetos (criar)
+// POST /projetos (criar novo projeto)
 router.post('/', verificarToken, async (req, res) => {
   const {
     nome_proprietario,
@@ -76,14 +76,14 @@ router.post('/', verificarToken, async (req, res) => {
     ];
 
     const resultado = await pool.query(query, values);
-    res.status(201).json({ message: 'Projeto criado com sucesso', projeto: resultado.rows[0] });
+    res.status(201).json({ message: '✅ Projeto criado com sucesso.', projeto: resultado.rows[0] });
   } catch (error) {
-    console.error('Erro ao cadastrar projeto:', error);
-    res.status(500).json({ error: 'Erro ao cadastrar projeto' });
+    console.error('❌ Erro ao cadastrar projeto:', error);
+    res.status(500).json({ error: 'Erro ao cadastrar projeto.' });
   }
 });
 
-// ROTA PUT /projetos/:id (atualizar)
+// PUT /projetos/:id (atualizar projeto existente)
 router.put('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
   const {
@@ -130,31 +130,30 @@ router.put('/:id', verificarToken, async (req, res) => {
     const resultado = await pool.query(query, values);
 
     if (resultado.rowCount === 0) {
-      return res.status(404).json({ error: 'Projeto não encontrado' });
+      return res.status(404).json({ error: 'Projeto não encontrado.' });
     }
 
-    res.json({ message: 'Projeto atualizado com sucesso', projeto: resultado.rows[0] });
+    res.json({ message: '✅ Projeto atualizado com sucesso.', projeto: resultado.rows[0] });
   } catch (error) {
-    console.error('Erro ao atualizar projeto:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar projeto' });
+    console.error('❌ Erro ao atualizar projeto:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar projeto.' });
   }
 });
 
-// ROTA DELETE /projetos/:id (excluir)
+// DELETE /projetos/:id (remover projeto)
 router.delete('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
-
   try {
-    const result = await pool.query('DELETE FROM projetos WHERE id = $1', [id]);
+    const resultado = await pool.query('DELETE FROM projetos WHERE id = $1', [id]);
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Projeto não encontrado' });
+    if (resultado.rowCount === 0) {
+      return res.status(404).json({ error: 'Projeto não encontrado.' });
     }
 
-    res.json({ message: 'Projeto deletado com sucesso!' });
+    res.json({ message: '🗑️ Projeto deletado com sucesso.' });
   } catch (error) {
-    console.error('Erro ao deletar projeto:', error);
-    res.status(500).json({ error: 'Erro ao deletar projeto' });
+    console.error('❌ Erro ao deletar projeto:', error);
+    res.status(500).json({ error: 'Erro ao deletar projeto.' });
   }
 });
 
