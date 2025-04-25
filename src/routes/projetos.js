@@ -4,7 +4,7 @@ import verificarToken from '../middleware/verificarToken.js';
 
 const router = express.Router();
 
-// ROTA GET /projetos (protegido por token)
+// ROTA GET /projetos (listar todos)
 router.get('/', verificarToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM projetos');
@@ -15,7 +15,7 @@ router.get('/', verificarToken, async (req, res) => {
   }
 });
 
-// ROTA GET /projetos/:id
+// ROTA GET /projetos/:id (detalhar)
 router.get('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
 
@@ -33,14 +33,63 @@ router.get('/:id', verificarToken, async (req, res) => {
   }
 });
 
-// ROTA PUT /projetos/:id
+// ROTA POST /projetos (criar)
+router.post('/', verificarToken, async (req, res) => {
+  const {
+    nome_proprietario,
+    endereco,
+    codigo_projeto,
+    engenheiro_responsavel,
+    crea,
+    situacao,
+    debito_status,
+    data_vencimento,
+    parcelas
+  } = req.body;
+
+  try {
+    const query = `
+      INSERT INTO projetos (
+        nome_proprietario,
+        endereco,
+        codigo_projeto,
+        engenheiro_responsavel,
+        crea,
+        situacao,
+        debito_status,
+        data_vencimento,
+        parcelas
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *;
+    `;
+
+    const values = [
+      nome_proprietario,
+      endereco,
+      codigo_projeto,
+      engenheiro_responsavel,
+      crea,
+      situacao,
+      debito_status,
+      data_vencimento || null,
+      parcelas || null
+    ];
+
+    const resultado = await pool.query(query, values);
+    res.status(201).json({ message: 'Projeto criado com sucesso', projeto: resultado.rows[0] });
+  } catch (error) {
+    console.error('Erro ao cadastrar projeto:', error);
+    res.status(500).json({ error: 'Erro ao cadastrar projeto' });
+  }
+});
+
+// ROTA PUT /projetos/:id (atualizar)
 router.put('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
   const {
     nome_proprietario,
     endereco,
     codigo_projeto,
-    localizacao,
     engenheiro_responsavel,
     crea,
     situacao,
@@ -55,14 +104,13 @@ router.put('/:id', verificarToken, async (req, res) => {
       SET nome_proprietario = $1,
           endereco = $2,
           codigo_projeto = $3,
-          localizacao = $4,
-          engenheiro_responsavel = $5,
-          crea = $6,
-          situacao = $7,
-          debito_status = $8,
-          data_vencimento = $9,
-          parcelas = $10
-      WHERE id = $11
+          engenheiro_responsavel = $4,
+          crea = $5,
+          situacao = $6,
+          debito_status = $7,
+          data_vencimento = $8,
+          parcelas = $9
+      WHERE id = $10
       RETURNING *;
     `;
 
@@ -70,7 +118,6 @@ router.put('/:id', verificarToken, async (req, res) => {
       nome_proprietario,
       endereco,
       codigo_projeto,
-      localizacao,
       engenheiro_responsavel,
       crea,
       situacao,
@@ -93,70 +140,7 @@ router.put('/:id', verificarToken, async (req, res) => {
   }
 });
 
-// ROTA PUT: Atualizar um projeto existente
-router.put('/:id', verificarToken, async (req, res) => {
-  const { id } = req.params;
-  const {
-    nome_proprietario,
-    endereco,
-    codigo_projeto,
-    localizacao,
-    engenheiro_responsavel,
-    crea,
-    situacao,
-    debito_status,
-    data_vencimento,
-    parcelas
-  } = req.body;
-
-  console.log('🟡 Dados recebidos no PUT /projetos/:id =>', req.body); // 👈 DEBUG CRUCIAL
-
-  try {
-    const query = `
-      UPDATE projetos
-      SET nome_proprietario = $1,
-          endereco = $2,
-          codigo_projeto = $3,
-          localizacao = $4,
-          engenheiro_responsavel = $5,
-          crea = $6,
-          situacao = $7,
-          debito_status = $8,
-          data_vencimento = $9,
-          parcelas = $10
-      WHERE id = $11
-      RETURNING *;
-    `;
-
-    const values = [
-      nome_proprietario,
-      endereco,
-      codigo_projeto,
-      localizacao,
-      engenheiro_responsavel,
-      crea,
-      situacao,
-      debito_status,
-      data_vencimento,
-      parcelas,
-      id
-    ];
-
-    const resultado = await pool.query(query, values);
-
-    if (resultado.rowCount === 0) {
-      return res.status(404).json({ error: 'Projeto não encontrado' });
-    }
-
-    res.json({ message: 'Projeto atualizado com sucesso', projeto: resultado.rows[0] });
-  } catch (error) {
-    console.error('❌ Erro ao atualizar projeto (PUT /projetos/:id):', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar projeto' });
-  }
-});
-
-
-// ROTA DELETE /projetos/:id
+// ROTA DELETE /projetos/:id (excluir)
 router.delete('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
 
