@@ -38,6 +38,33 @@ router.get('/:id', verificarToken, async (req, res) => {
   }
 });
 
+// ROTA POST: Cadastrar um novo usuário
+router.post('/', verificarToken, async (req, res) => {
+  const { nome, email, telefone, senha, tipo_usuario } = req.body;
+
+  if (!nome || !email || !telefone || !senha || !tipo_usuario) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(senha, 10);
+
+    const query = `
+      INSERT INTO usuarios (nome, email, telefone, senha, tipo_usuario)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, nome, email, telefone, tipo_usuario;
+    `;
+
+    const values = [nome, email, telefone, hashedPassword, tipo_usuario];
+    const result = await pool.query(query, values);
+
+    res.status(201).json({ message: 'Usuário cadastrado com sucesso', usuario: result.rows[0] });
+  } catch (error) {
+    console.error('Erro ao cadastrar usuário:', error);
+    res.status(500).json({ error: 'Erro interno ao cadastrar usuário' });
+  }
+});
+
 // PUT /usuarios/:id — atualiza um usuário
 router.put('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
