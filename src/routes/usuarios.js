@@ -1,5 +1,6 @@
 // src/routes/usuarios.js
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import pool from '../db/client.js';
 import verificarToken from '../middleware/verificarToken.js';
 
