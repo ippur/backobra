@@ -6,79 +6,73 @@ import verificarToken from '../middleware/verificarToken.js';
 
 const router = express.Router();
 
-// GET /usuarios — lista todos os usuários
+// GET /usuarios — Lista todos os usuários
 router.get('/', verificarToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, nome, email, telefone, tipo_usuario FROM usuarios ORDER BY id ASC'
-    );
-    res.json(result.rows);
+    const { rows } = await pool.query(`
+      SELECT id, nome, email, telefone, tipo_usuario
+      FROM usuarios
+      ORDER BY id ASC
+    `);
+    res.json(rows);
   } catch (error) {
-    console.error('Erro ao listar usuários:', error);
+    console.error('❌ Erro ao listar usuários:', error);
     res.status(500).json({ error: 'Erro ao buscar usuários.' });
   }
 });
 
-// GET /usuarios/:id — detalhes de um usuário
+// GET /usuarios/:id — Detalhar um usuário
 router.get('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query(
-      'SELECT id, nome, email, telefone, tipo_usuario FROM usuarios WHERE id = $1',
-      [id]
-    );
+    const { rows } = await pool.query(`
+      SELECT id, nome, email, telefone, tipo_usuario
+      FROM usuarios
+      WHERE id = $1
+    `, [id]);
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    res.json(result.rows[0]);
+    res.json(rows[0]);
   } catch (error) {
-    console.error('Erro ao buscar usuário:', error);
+    console.error('❌ Erro ao buscar usuário:', error);
     res.status(500).json({ error: 'Erro ao buscar usuário.' });
   }
 });
 
-// POST /usuarios — cadastra um novo usuário
+// POST /usuarios — Cadastrar novo usuário
 router.post('/', verificarToken, async (req, res) => {
   const { nome, email, telefone, senha, tipo_usuario } = req.body;
 
   if (!nome || !email || !telefone || !senha || !tipo_usuario) {
-    return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
   }
 
   try {
     const hashedPassword = await bcrypt.hash(senha, 10);
 
-    const query = `
+    const { rows } = await pool.query(`
       INSERT INTO usuarios (nome, email, telefone, senha, tipo_usuario)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id, nome, email, telefone, tipo_usuario;
-    `;
+    `, [nome, email, telefone, hashedPassword, tipo_usuario]);
 
-    const values = [nome, email, telefone, hashedPassword, tipo_usuario];
-    const result = await pool.query(query, values);
-
-    res.status(201).json({ message: 'Usuário cadastrado com sucesso', usuario: result.rows[0] });
+    res.status(201).json({ message: 'Usuário cadastrado com sucesso', usuario: rows[0] });
   } catch (error) {
-    console.error('Erro ao cadastrar usuário:', error);
-
-    if (error.code === '23505') { // 23505 é o código de erro do PostgreSQL para violação de unicidade
-      return res.status(400).json({ error: 'Já existe um usuário cadastrado com este e-mail.' });
-    }
-
-    res.status(500).json({ error: 'Erro interno ao cadastrar usuário' });
+    console.error('❌ Erro ao cadastrar usuário:', error);
+    res.status(500).json({ error: 'Erro interno ao cadastrar usuário.' });
   }
 });
 
-// PUT /usuarios/:id — atualiza um usuário
+// PUT /usuarios/:id — Atualizar usuário
 router.put('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
   const { nome, email, telefone, tipo_usuario } = req.body;
 
   try {
-    const result = await pool.query(
-      `
+    const { rowCount, rows } = await pool.query(`
       UPDATE usuarios
       SET nome = $1,
           email = $2,
@@ -86,35 +80,33 @@ router.put('/:id', verificarToken, async (req, res) => {
           tipo_usuario = $4
       WHERE id = $5
       RETURNING id, nome, email, telefone, tipo_usuario;
-      `,
-      [nome, email, telefone, tipo_usuario, id]
-    );
+    `, [nome, email, telefone, tipo_usuario, id]);
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Usuário não encontrado para atualizar' });
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado para atualização.' });
     }
 
-    res.json({ message: 'Usuário atualizado com sucesso', usuario: result.rows[0] });
+    res.json({ message: 'Usuário atualizado com sucesso', usuario: rows[0] });
   } catch (error) {
-    console.error('Erro ao atualizar usuário:', error);
+    console.error('❌ Erro ao atualizar usuário:', error);
     res.status(500).json({ error: 'Erro ao atualizar usuário.' });
   }
 });
 
-// DELETE /usuarios/:id — remove um usuário
+// DELETE /usuarios/:id — Excluir usuário
 router.delete('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
+    const { rowCount } = await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Usuário não encontrado para excluir' });
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado para exclusão.' });
     }
 
-    res.json({ message: 'Usuário excluído com sucesso' });
+    res.json({ message: 'Usuário excluído com sucesso.' });
   } catch (error) {
-    console.error('Erro ao deletar usuário:', error);
+    console.error('❌ Erro ao deletar usuário:', error);
     res.status(500).json({ error: 'Erro ao deletar usuário.' });
   }
 });
