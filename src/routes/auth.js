@@ -1,3 +1,4 @@
+// src/routes/auth.js
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -13,14 +14,14 @@ const gerarToken = (payload) => {
 
 // Rota de registro de novo usuário
 router.post('/register', async (req, res) => {
-  const { nome, email, telefone, senha } = req.body;
+  const { nome, email, telefone, senha, tipo_usuario } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(senha, 10);
 
     await pool.query(
-      'INSERT INTO usuarios (nome, email, telefone, senha) VALUES ($1, $2, $3, $4)',
-      [nome, email, telefone, hashedPassword]
+      'INSERT INTO usuarios (nome, email, telefone, senha, tipo_usuario) VALUES ($1, $2, $3, $4, $5)',
+      [nome, email, telefone, hashedPassword, tipo_usuario]
     );
 
     return res.status(201).json({ message: 'Usuário registrado com sucesso!' });
@@ -48,13 +49,17 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Senha incorreta' });
     }
 
-    const token = gerarToken({ id: usuario.id, nome: usuario.nome });
+    // Incluindo tipo_usuario no token (opcional)
+    const token = gerarToken({ id: usuario.id, nome: usuario.nome, tipo_usuario: usuario.tipo_usuario });
+
+    // Agora retornamos o tipo_usuario junto
     return res.json({
       token,
       usuario: {
         id: usuario.id,
         nome: usuario.nome,
-        email: usuario.email
+        email: usuario.email,
+        tipo_usuario: usuario.tipo_usuario
       }
     });
   } catch (error) {
