@@ -7,18 +7,16 @@ import pool from '../db/client.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'obravisor_secret';
 
-// Função auxiliar para gerar o token JWT
 const gerarToken = (payload) => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '2h' });
 };
 
-// Rota de registro de novo usuário
+// Rota de registro de novo usuário (ainda usada em dev)
 router.post('/register', async (req, res) => {
   const { nome, email, telefone, senha, tipo_usuario } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(senha, 10);
-
     await pool.query(
       'INSERT INTO usuarios (nome, email, telefone, senha, tipo_usuario) VALUES ($1, $2, $3, $4, $5)',
       [nome, email, telefone, hashedPassword, tipo_usuario]
@@ -37,30 +35,32 @@ router.post('/login', async (req, res) => {
 
   try {
     const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+    const usuario = result.rows[0];
 
-    if (result.rows.length === 0) {
+    if (!usuario) {
       return res.status(400).json({ error: 'Usuário não encontrado' });
     }
 
-    const usuario = result.rows[0];
     const senhaValida = await bcrypt.compare(senha.trim(), usuario.senha);
 
     if (!senhaValida) {
       return res.status(401).json({ error: 'Senha incorreta' });
     }
 
-    // Incluindo tipo_usuario no token (opcional)
-    const token = gerarToken({ id: usuario.id, nome: usuario.nome, tipo_usuario: usuario.tipo_usuario });
+    const token = gerarToken({
+      id: usuario.id,
+      nome: usuario.nome,
+      tipo_usuario: usuario.tipo_usuario,
+    });
 
-    // Agora retornamos o tipo_usuario junto
     return res.json({
       token,
       usuario: {
         id: usuario.id,
         nome: usuario.nome,
         email: usuario.email,
-        tipo_usuario: usuario.tipo_usuario,
-      }
+        tipo_usuario: usuario.tipo_usuario, // ESSENCIAL para controle no frontend
+      },
     });
   } catch (error) {
     console.error('❌ Erro no login:', error);
