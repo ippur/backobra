@@ -93,6 +93,66 @@ router.put('/:id', verificarToken, async (req, res) => {
   }
 });
 
+// PUT /usuarios/:id/senha — alterar senha com verificação da atual
+router.put('/:id/senha', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  const { senha_atual, nova_senha } = req.body;
+
+  if (!senha_atual || !nova_senha) {
+    return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
+  }
+
+  try {
+    const usuarioResult = await pool.query('SELECT senha FROM usuarios WHERE id = $1', [id]);
+    if (usuarioResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    const senhaCorreta = await bcrypt.compare(senha_atual, usuarioResult.rows[0].senha);
+    if (!senhaCorreta) {
+      return res.status(401).json({ error: 'Senha atual incorreta.' });
+    }
+
+    const novaHash = await bcrypt.hash(nova_senha, 10);
+    await pool.query('UPDATE usuarios SET senha = $1 WHERE id = $2', [novaHash, id]);
+
+    res.json({ message: 'Senha atualizada com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao atualizar senha:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar senha.' });
+  }
+});
+
+// PUT /usuarios/:id/senha/admin — permite ao TI alterar senha de qualquer usuário
+router.put('/:id/senha/admin', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  const { nova_senha } = req.body;
+
+  const tipoUsuario = req.usuario?.tipo_usuario;
+
+  if (tipoUsuario !== 'TI') {
+    return res.status(403).json({ error: 'Acesso negado. Apenas TI pode realizar esta operação.' });
+  }
+
+  if (!nova_senha) {
+    return res.status(400).json({ error: 'Nova senha obrigatória.' });
+  }
+
+  try {
+    const novaHash = await bcrypt.hash(nova_senha, 10);
+    const result = await pool.query('UPDATE usuarios SET senha = $1 WHERE id = $2', [novaHash, id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    res.json({ message: 'Senha atualizada com sucesso pelo administrador TI.' });
+  } catch (error) {
+    console.error('Erro ao alterar senha pelo admin:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar senha.' });
+  }
+});
+
 // DELETE /usuarios/:id — Excluir usuário
 router.delete('/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
