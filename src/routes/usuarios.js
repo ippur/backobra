@@ -126,7 +126,11 @@ router.put('/:id/senha', verificarToken, async (req, res) => {
 // PUT /usuarios/:id/senha/admin — permite ao TI alterar senha de qualquer usuário
 router.put('/:id/senha/admin', verificarToken, async (req, res) => {
   const { id } = req.params;
-  const { novaSenha } = req.body; // <-- corrigido aqui
+  const { nova_senha } = req.body;
+
+  // LOG para depuração
+  console.log('🔐 Requisição recebida em /usuarios/:id/senha/admin');
+  console.log('req.body:', req.body); // <- aqui veremos se nova_senha está realmente chegando
 
   const tipoUsuario = req.usuario?.tipo_usuario;
 
@@ -134,13 +138,16 @@ router.put('/:id/senha/admin', verificarToken, async (req, res) => {
     return res.status(403).json({ error: 'Acesso negado. Apenas TI pode realizar esta operação.' });
   }
 
-  if (!novaSenha) {
+  if (!nova_senha) {
     return res.status(400).json({ error: 'Nova senha obrigatória.' });
   }
 
   try {
-    const novaHash = await bcrypt.hash(novaSenha, 10); // <-- usa novaSenha
-    const result = await pool.query('UPDATE usuarios SET senha = $1 WHERE id = $2', [novaHash, id]);
+    const novaHash = await bcrypt.hash(nova_senha, 10);
+    const result = await pool.query(
+      'UPDATE usuarios SET senha = $1 WHERE id = $2',
+      [novaHash, id]
+    );
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado.' });
