@@ -14,8 +14,9 @@ const PORT = process.env.PORT || 3001;
 
 // Origens permitidas
 const allowedOrigins = [
-  'http://localhost:3001',
-  'https://obravisor-chi.vercel.app/'
+  'http://localhost:3000', // frontend local
+  'http://localhost:3001', // backend local
+  'https://obravisor-chi.vercel.app', // frontend no Vercel
 ];
 
 // Configuração do CORS (inclui suporte a Postman)
